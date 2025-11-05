@@ -77,6 +77,14 @@ class Functions:
                 data = getattr(var, prop)
             except:
                 raise Exception(f"Error while getting {prop} from {name}")
+            location_data_type = ""
+            try:
+                location_data_type = type(getattr(block_vars, location))
+            except:
+                pass
+            print(location + " is " + str(location_data_type))
+            if location_data_type == list or location_data_type == ReturnList:
+                getattr(block_vars, location).append(data)
             setattr(block_vars, location, data)
     @staticmethod
     def ADD_RETURN(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
@@ -87,6 +95,34 @@ class Functions:
             return_obj.append(var)
         except:
             raise Exception(f"Variable {name} doesnt exist in the current context")
+    @staticmethod
+    def ITERATE_OVER(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        iter_target = split[1]
+        func_name = split[4]
+        for_var_name = split[3]
+        store_name = split[-1]
+        result = ReturnList()
+        line_inside = " ".join(split[4:])
+        func = getattr(Functions, func_name)
+        try:
+            variable = getattr(block_vars, iter_target)
+        except:
+            raise Exception(f"Variable {iter_target} doesnt exist in the current context")
+        try:
+            for v in variable:
+                print("iterating over " + str(v) + " of " + str(variable))
+                for_variables = Variables()
+                setattr(for_variables, for_var_name, v)
+                setattr(for_variables, store_name, result)
+                print("variables are " + str(for_variables.__dict__) + " and result is " + str(result.__dict__))
+                func(line_inside, "", for_variables, wmi_obj, result)
+                print("after calling the function, variables are " + str(for_variables.__dict__) + " and result is " + str(result.__dict__))
+            print("gave block variables " + str(list(result)))
+            setattr(block_vars, store_name, list(result))
+        except:
+            raise Exception(f"Function {func_name} didnt exist")
+
 def compile(wmiq_code, ignore_lazy_errors=False):
     variables = Variables()
     data = wmiq_code
@@ -117,6 +153,8 @@ def compile(wmiq_code, ignore_lazy_errors=False):
                     block_wmi_obj = wmi.WMI(namespace=block)
                 just_set_block = True
                 print("set block to " + str(block) + " and block_wmi_obj to " + str(block_wmi_obj))
+            else:
+                pass
         indent = len(line) - len(line.lstrip())
         if indent == 4:
             if block_vars == None:
