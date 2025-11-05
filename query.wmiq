@@ -1,0 +1,21 @@
+RETURN_DATA Data
+
+root\wmi:
+    STORE_FUNC MSAcpi_ThermalZoneTemperature IN Sensors AS list
+    STORE_LIST_ELEMENT Sensors[0] IN Sensor
+    STORE_PROP Sensor.CurrentTemperature IN Temp
+    ADD_RETURN Temp
+
+root\CIMV2:
+    STORE_FUNC Win32_VideoController IN Gpus AS list
+    STORE_LIST_ELEMENT Gpus[0] IN Gpu
+    STORE_PROP Gpu.Name IN GpuName
+    ADD_RETURN GpuName
+
+NULL:
+    STORE_FUNC Win32_Processor IN Processors AS list
+    STORE_LIST_ELEMENT Processors[0] IN P
+    STORE_PROP P.Name IN PName
+    ADD_RETURN PName
+
+RETURN_END Data
