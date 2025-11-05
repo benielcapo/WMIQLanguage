@@ -14,8 +14,7 @@ root\CIMV2:
 
 NULL:
     STORE_FUNC Win32_Processor IN Processors AS list
-    STORE_LIST_ELEMENT Processors[0] IN P
-    STORE_PROP P.Name IN PName
-    ADD_RETURN PName
+    ITERATE_OVER Processors AS P STORE_PROP P.Name IN PNames
+    ADD_RETURN PNames
 
 RETURN_END Data
