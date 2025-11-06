@@ -4,17 +4,13 @@ root\wmi:
     STORE_FUNC MSAcpi_ThermalZoneTemperature IN Sensors AS list
     STORE_LIST_ELEMENT Sensors[0] IN Sensor
     STORE_PROP Sensor.CurrentTemperature IN Temp
-    ADD_RETURN Temp
-
-root\CIMV2:
-    STORE_FUNC Win32_VideoController IN Gpus AS list
-    STORE_LIST_ELEMENT Gpus[0] IN Gpu
-    STORE_PROP Gpu.Name IN GpuName
-    ADD_RETURN GpuName
+    ARIT ((Temp / 10) - 273.15) IN Celsius
+    PRINT "Temperature is "
+    PRINT Celsius
+    ADD_RETURN Celsius
 
 NULL:
     STORE_FUNC Win32_Processor IN Processors AS list
-    ITERATE_OVER Processors AS P STORE_PROP P.Name IN PNames
-    ADD_RETURN PNames
-
+#    ITERATE_OVER Processors AS Proc STORE_PROP Proc.DeviceID IN DeviceIDs
+    ADD_RETURN Processors
 RETURN_END Data
