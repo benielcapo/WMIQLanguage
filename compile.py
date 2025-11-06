@@ -8,6 +8,10 @@ class Variables:
 class ReturnList(list):
     pass
 
+def get_class_properties(obj):
+    props = {k: v for k, v in vars(obj).items() if not callable(v)}
+    return props
+
 class Functions:
     @staticmethod
     def STORE_FUNC(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj):
@@ -58,7 +62,6 @@ class Functions:
             raise Exception(f"Index {index} in {name} is out of bounds, or {name} isnt a list")
         if split[2] == "IN":
             location = split[3]
-            print("set " + str(element) + " as " + str(location))
             setattr(block_vars, location, element)
     @staticmethod
     def STORE_PROP(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj):
@@ -82,7 +85,6 @@ class Functions:
                 location_data_type = type(getattr(block_vars, location))
             except:
                 pass
-            print(location + " is " + str(location_data_type))
             if location_data_type == list or location_data_type == ReturnList:
                 getattr(block_vars, location).append(data)
             setattr(block_vars, location, data)
@@ -111,19 +113,68 @@ class Functions:
             raise Exception(f"Variable {iter_target} doesnt exist in the current context")
         try:
             for v in variable:
-                print("iterating over " + str(v) + " of " + str(variable))
                 for_variables = Variables()
                 setattr(for_variables, for_var_name, v)
                 setattr(for_variables, store_name, result)
-                print("variables are " + str(for_variables.__dict__) + " and result is " + str(result.__dict__))
                 func(line_inside, "", for_variables, wmi_obj, result)
-                print("after calling the function, variables are " + str(for_variables.__dict__) + " and result is " + str(result.__dict__))
-            print("gave block variables " + str(list(result)))
             setattr(block_vars, store_name, list(result))
         except:
             raise Exception(f"Function {func_name} didnt exist")
+    @staticmethod
+    def STORE_RAW(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        var_name = split[1]
+        try:
+            data = getattr(block_vars, var_name)
+        except:
+            raise Exception(f"Variable {var_name} doesnt exist in the current context")
+        location = split[3]
+        location_data_type = ""
+        try:
+            location_data_type = type(getattr(block_vars, location))
+        except:
+            pass
+        if location_data_type == list or location_data_type == ReturnList:
+            getattr(block_vars, location).append(data)
+        setattr(block_vars, location, data)
+    @staticmethod
+    def RANGE(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        start = split[1]
+        end = split[2]
+        location = split[-1]
+        try:
+            range_obj = list(range(int(start), int(end)))
+        except:
+            raise Exception(f"Either start({start}) or end({end}) arent valid integers")
+        setattr(block_vars, location, range_obj)
+    @staticmethod
+    def STORE_STR(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        content = split[1]
+        location = split[3]
+        setattr(block_vars, location, content)
+    @staticmethod
+    def PRINT(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        content = " ".join(split[1:])
+        if content.startswith("'") or content.startswith('"'):
+            print(content[1:-1])
+        else:
+            try:
+                var = getattr(block_vars, content)
+                print(var)
+            except:
+                raise Exception(f"Variable {content} doesnt exist in the current context")
+    @staticmethod
+    def ARIT(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        operation = " ".join(split[1:-2])
+        location = split[-1]
+        result = eval(operation, {}, get_class_properties(block_vars))
+        setattr(block_vars, location, result)
 
-def compile(wmiq_code, ignore_lazy_errors=False):
+def compile(wmiq_code, ignore_lazy_errors=False, allow_prints=False):
     variables = Variables()
     data = wmiq_code
     lines = data.split("\n")
@@ -142,9 +193,11 @@ def compile(wmiq_code, ignore_lazy_errors=False):
                 raise Exception("A RETURN_DATA already existed (" + str(return_data_name) + ")")
             setattr(variables, split[1], ReturnList())
             return_data_name = split[1]
-        print("length of " + str(split) + " is " + str(len(split)))
+        if allow_prints:
+            print("length of " + str(split) + " is " + str(len(split)))
         if len(split) == 1:
-            print("does " + str(split[0]) + " end with : " + str(split[0].endswith(":")))
+            if allow_prints:
+                print("does " + str(split[0]) + " end with : " + str(split[0].endswith(":")))
             if split[0].endswith(":"):
                 block = split[0][:-1]
                 if block == "NULL":
@@ -152,7 +205,8 @@ def compile(wmiq_code, ignore_lazy_errors=False):
                 else:
                     block_wmi_obj = wmi.WMI(namespace=block)
                 just_set_block = True
-                print("set block to " + str(block) + " and block_wmi_obj to " + str(block_wmi_obj))
+                if allow_prints:
+                    print("set block to " + str(block) + " and block_wmi_obj to " + str(block_wmi_obj))
             else:
                 pass
         indent = len(line) - len(line.lstrip())
@@ -160,6 +214,8 @@ def compile(wmiq_code, ignore_lazy_errors=False):
             if block_vars == None:
                 block_vars = Variables()
             command = stripped_split[0].lstrip()
+            if command.strip() == "":
+                continue
             if not ignore_lazy_errors:
                 try:
                     getattr(Functions, command)(line.lstrip(), block, block_vars, block_wmi_obj, getattr(variables, return_data_name))
