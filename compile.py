@@ -12,6 +12,32 @@ def get_class_properties(obj):
     props = {k: v for k, v in vars(obj).items() if not callable(v)}
     return props
 
+def handle_if(val1_, operator, val2_, block_vars):
+    def resolve_value(val):
+        if (val.startswith("'") and val.endswith("'")) or (val.startswith('"') and val.endswith('"')):
+            return val[1:-1]
+        elif val.lstrip('-').isdigit():
+            return int(val)
+        else:
+            try:
+                return getattr(block_vars, val)
+            except AttributeError:
+                raise NameError(f"Variable '{val}' not found in block_vars")
+    left = resolve_value(val1_)
+    right = resolve_value(val2_)
+    ops = {
+        "==": lambda a, b: a == b,
+        "!=": lambda a, b: a != b,
+        ">": lambda a, b: a > b,
+        "<": lambda a, b: a < b,
+        ">=": lambda a, b: a >= b,
+        "<=": lambda a, b: a <= b,
+    }
+    if operator not in ops:
+        raise ValueError(f"Invalid operator '{operator}'")
+    result = ops[operator](left, right)
+    return result
+
 class Functions:
     @staticmethod
     def STORE_FUNC(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj):
@@ -173,6 +199,44 @@ class Functions:
         location = split[-1]
         result = eval(operation, {}, get_class_properties(block_vars))
         setattr(block_vars, location, result)
+    @staticmethod
+    def STORE_INT(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        num = split[1]
+        location = split[3]
+        try:
+            setattr(block_vars, location, int(num))
+        except:
+            raise Exception(f"{num} is not a valid int")
+    @staticmethod
+    def IF(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        end_condition = line.find("{")
+        condition = " ".join(split[1:end_condition])
+        condition = condition[:condition.find("{")]
+        if condition.endswith(" "):
+            condition = condition[:-1]
+        split_con = condition.split(" ")
+        val1 = split_con[0]
+        operator = split_con[1]
+        val2 = split_con[2]
+        brackets_inside = line[line.index("{"):line.index("}")].removeprefix("{").removeprefix(" ").removeprefix(" ")
+        do_if = brackets_inside.split(" | ")
+        result = handle_if(val1, operator, val2, block_vars)
+        if result == True:
+            try:
+                do_if_true = do_if[0]
+                func_name = do_if_true.split(" ")[0]
+                getattr(Functions, func_name)(do_if_true, block_name, block_vars, wmi_obj, return_obj)
+            except Exception as err:
+                pass
+        else:
+            try:
+                do_if_false = do_if[1]
+                func_name = do_if_false.split(" ")[0]
+                getattr(Functions, func_name)(do_if_false, block_name, block_vars, wmi_obj, return_obj)
+            except Exception as err:
+                pass
 
 def compile(wmiq_code, ignore_lazy_errors=False, allow_prints=False):
     variables = Variables()
