@@ -1,0 +1,13 @@
+RETURN_DATA Data
+
+root\wmi:
+    STORE_FUNC MSAcpi_ThermalZoneTemperature IN Sensors AS list
+    STORE_LIST_ELEMENT Sensors[0] IN Sensor
+    STORE_PROP Sensor.CurrentTemperature IN Temp
+    ARIT ((Temp / 10) - 273.15) IN Celsius
+    PRINT Celsius
+    IF Celsius > 30 { STORE_STR Overheating IN Message | STORE_STR Stable IN Message }
+    PRINT Message
+    ADD_RETURN Celsius
+
+RETURN_END Data
