@@ -1,9 +1,17 @@
 RETURN_DATA Data
 
 NULL:
-    STORE_FLOAT 0.1 IN a
-    STORE_FLOAT 0.2 IN b
-    ARIT a + b IN c
-    PRINT c
+    STORE_STR Inside the try IN Msg
+    TRY { PRINT Msg } IN Result
+    STORE_LIST_ELEMENT Result[0] IN Succ
+    STORE_LIST_ELEMENT Result[1] IN ErrMsg
+    IF Succ == -1 { PRINT ErrMsg }
+    IF Succ == -1 {ADD_RETURN ErrMsg}
+    STORE_FLOAT 6.7 IN SS
+    ARIT 6.7 - 0.1 IN R
+    STORE_NONE IN Null
+    PRINT SS
+    PRINT R
+    PRINT Null
 
 RETURN_END Data
