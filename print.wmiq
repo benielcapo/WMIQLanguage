@@ -1,0 +1,6 @@
+RETURN_DATA Data
+
+NULL:
+    PRINT "hello world"
+
+RETURN_END Data
