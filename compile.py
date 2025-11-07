@@ -52,7 +52,14 @@ class Functions:
                     try:
                         result = getattr(wmi_obj, func_name)()
                     except AttributeError:
-                        raise Exception(f"Class {func_name} not found in namespace {wmi_obj._namespace}")
+                        succ = False
+                        try:
+                            result = getattr(wmi_obj, getattr(block_vars, func_name))()
+                            succ = True
+                        except:
+                            pass
+                        if not succ:
+                            raise Exception(f"Class {func_name} not found in namespace {wmi_obj._namespace} or block variables")
                     except Exception as e:
                         raise Exception(f"WMI error accessing {func_name}: {e}")
                     if isinstance(data, list):
@@ -103,7 +110,14 @@ class Functions:
             except:
                 raise Exception(f"Variable {name} doesnt exist in the current context")
             try:
-                data = getattr(var, prop)
+                if prop.startswith("{") and prop.endswith("}"):
+                    try:
+                        var_prop = getattr(block_vars, prop[1:-1])
+                        data = getattr(var, var_prop)
+                    except:
+                        data = getattr(var, prop)
+                else:
+                    data = getattr(var, prop)
             except:
                 raise Exception(f"Error while getting {prop} from {name}")
             location_data_type = ""
@@ -177,8 +191,12 @@ class Functions:
     @staticmethod
     def STORE_STR(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
         split = line.split(" ")
-        content = split[1]
-        location = split[3]
+        content = " ".join(split[1:-2])
+        location = split[-1]
+        if location == "":
+            split = split[:-1]
+            location = split[-1]
+            content = " ".join(split[1:-2])
         setattr(block_vars, location, content)
     @staticmethod
     def PRINT(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
@@ -191,6 +209,7 @@ class Functions:
                 var = getattr(block_vars, content)
                 print(var)
             except:
+                print(block_vars.__dict__)
                 raise Exception(f"Variable {content} doesnt exist in the current context")
     @staticmethod
     def ARIT(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
@@ -228,14 +247,14 @@ class Functions:
                 do_if_true = do_if[0]
                 func_name = do_if_true.split(" ")[0]
                 getattr(Functions, func_name)(do_if_true, block_name, block_vars, wmi_obj, return_obj)
-            except Exception as err:
+            except IndexError:
                 pass
         else:
             try:
                 do_if_false = do_if[1]
                 func_name = do_if_false.split(" ")[0]
                 getattr(Functions, func_name)(do_if_false, block_name, block_vars, wmi_obj, return_obj)
-            except Exception as err:
+            except IndexError:
                 pass
 
 def compile(wmiq_code, ignore_lazy_errors=False, allow_prints=False):
