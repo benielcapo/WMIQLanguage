@@ -1,0 +1,8 @@
+RETURN_DATA Data
+
+NULL:
+    RANGE 30 50 IN Numbers
+    ITERATE_OVER Numbers AS N STORE_RAW N IN Nums
+    ADD_RETURN Nums
+
+RETURN_END Data
