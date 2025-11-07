@@ -1,6 +1,7 @@
 import builtins
 import wmi
 import sys
+import os
 
 class Variables:
     pass
@@ -16,8 +17,8 @@ def handle_if(val1_, operator, val2_, block_vars):
     def resolve_value(val):
         if (val.startswith("'") and val.endswith("'")) or (val.startswith('"') and val.endswith('"')):
             return val[1:-1]
-        elif val.lstrip('-').isdigit():
-            return int(val)
+        elif val.lstrip('-').replace('.', '', 1).isdigit():
+            return float(val) if '.' in val else int(val)
         else:
             try:
                 return getattr(block_vars, val)
@@ -35,8 +36,7 @@ def handle_if(val1_, operator, val2_, block_vars):
     }
     if operator not in ops:
         raise ValueError(f"Invalid operator '{operator}'")
-    result = ops[operator](left, right)
-    return result
+    return ops[operator](left, right)
 
 class Functions:
     @staticmethod
@@ -209,7 +209,6 @@ class Functions:
                 var = getattr(block_vars, content)
                 print(var)
             except:
-                print(block_vars.__dict__)
                 raise Exception(f"Variable {content} doesnt exist in the current context")
     @staticmethod
     def ARIT(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
@@ -239,7 +238,7 @@ class Functions:
         val1 = split_con[0]
         operator = split_con[1]
         val2 = split_con[2]
-        brackets_inside = line[line.index("{"):line.index("}")].removeprefix("{").removeprefix(" ").removeprefix(" ")
+        brackets_inside = line[line.index("{"):line.index("}")].removeprefix("{").removeprefix(" ").removesuffix(" ")
         do_if = brackets_inside.split(" | ")
         result = handle_if(val1, operator, val2, block_vars)
         if result == True:
@@ -256,6 +255,61 @@ class Functions:
                 getattr(Functions, func_name)(do_if_false, block_name, block_vars, wmi_obj, return_obj)
             except IndexError:
                 pass
+    @staticmethod
+    def TRY(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        brackets_inside = line[line.index("{"):line.index("}")].removeprefix("{").removeprefix(" ").removesuffix(" ")
+        func_name = brackets_inside.split(" ")[0]
+        location = split[-1]
+        result = []
+        try:
+            getattr(Functions, func_name)(brackets_inside, block_name, block_vars, wmi_obj, return_obj)
+            result.append(0)
+            result.append("")
+        except Exception as err:
+            result.append(-1)
+            result.append(str(err))
+        setattr(block_vars, location, result)
+    @staticmethod
+    def STORE_FLOAT(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        location = split[-1]
+        float_str = split[1]
+        setattr(block_vars, location, float(float_str))
+    @staticmethod
+    def STORE_NONE(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        location = split[-1]
+        setattr(block_vars, location, None)
+    @staticmethod
+    def OPEN(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        location = split[-1]
+        file_name = " ".join(split[1:-2])
+        if os.path.exists(file_name):
+            with open(file_name) as f:
+                try:
+                    setattr(block_vars, location, f.read())
+                except UnicodeDecodeError:
+                    raise UnicodeDecodeError(f"{file_name} is binary data!")
+        else:
+            try:
+                file_name = getattr(block_vars, file_name)
+                with open(file_name) as f:
+                    try:
+                        setattr(block_vars, location, f.read())
+                    except UnicodeDecodeError:
+                        raise UnicodeDecodeError(f"{file_name} is binary data!")
+            except:
+                raise FileNotFoundError(f"File {file_name} doesnt exist")
+    @staticmethod
+    def WRITE_FILE(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList):
+        split = line.split(" ")
+        before_after = line.removeprefix("WRITE_FILE ").split(" IN ")
+        content = before_after[0]
+        file = before_after[1]
+        if content.startswith("'") or content.startswith('"') and content.endswith("'") or content.endswith('"')
+        print(before_after)
 
 def compile(wmiq_code, ignore_lazy_errors=False, allow_prints=False):
     variables = Variables()
