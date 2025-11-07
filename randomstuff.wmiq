@@ -1,0 +1,10 @@
+RETURN_DATA Data
+
+root\CIMV2:
+    STORE_STR Win32_OperatingSystem IN Cmd
+    STORE_FUNC Cmd IN Processors AS list
+    STORE_LIST_ELEMENT Processors[0] IN Proc
+    STORE_PROP Proc.__dict__ IN PN
+    ADD_RETURN PN
+
+RETURN_END Data
