@@ -1,0 +1,9 @@
+RETURN_DATA Data
+
+NULL:
+    STORE_STR C:\Users\Usuario\Downloads\sixseven-console.log IN Path
+    OPEN Path IN FData
+    ADD_RETURN FData
+    
+
+RETURN_END Data
