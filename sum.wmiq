@@ -1,0 +1,9 @@
+RETURN_DATA Data
+
+NULL:
+    STORE_FLOAT 0.1 IN a
+    STORE_FLOAT 0.2 IN b
+    ARIT a + b IN c
+    PRINT c
+
+RETURN_END Data
