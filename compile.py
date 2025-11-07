@@ -308,7 +308,8 @@ class Functions:
         before_after = line.removeprefix("WRITE_FILE ").split(" IN ")
         content = before_after[0]
         file = before_after[1]
-        if content.startswith("'") or content.startswith('"') and content.endswith("'") or content.endswith('"')
+        if content.startswith("'") or content.startswith('"') and content.endswith("'") or content.endswith('"'):
+            pass
         print(before_after)
 
 def compile(wmiq_code, ignore_lazy_errors=False, allow_prints=False):
