@@ -1,0 +1,7 @@
+RETURN_DATA Data
+
+NULL:
+    STORE_STR Hello, World! IN Msg
+    WRITE_FILE "Hello" IN "data.txt"
+
+RETURN_END Data
