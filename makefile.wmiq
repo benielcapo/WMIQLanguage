@@ -1,7 +1,9 @@
 RETURN_DATA Data
 
 NULL:
+    STORE_STR out.txt IN Target
     STORE_STR Hello, World! IN Msg
-    WRITE_FILE "Hello" IN "data.txt"
+    WRITE_FILE Msg IN Target
+    WRITE_FILE "Other message" IN "other.txt"
 
 RETURN_END Data
