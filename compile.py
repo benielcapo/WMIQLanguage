@@ -378,6 +378,45 @@ class Functions:
             raise Exception("Protocol " + str(proto_name) + " doesnt exist")
         result = proto.execute(block_name, block_vars, wmi_obj, return_obj, protocols, pass_args)
         setattr(block_vars, location, result)
+    @staticmethod
+    def WHILE(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList, self_protocol, protocols):
+        split = line.split(" ")
+        end_condition = line.find("{")
+        condition = " ".join(split[1:end_condition])
+        condition = condition[:condition.find("{")].removesuffix(" ")
+        split_con = condition.split(" ")
+        val1 = split_con[0]
+        operator = split_con[1]
+        val2 = split_con[2]
+        brackets_inside = line[line.index("{"):line.index("}")].removeprefix("{").removeprefix(" ").removesuffix(" ")
+        do_each_iter = brackets_inside.split(" | ")
+        while True:
+            result = handle_if(val1, operator, val2, block_vars)
+            if result:
+                for do in do_each_iter:
+                    try:
+                        func_name = do.split(" ")[0]
+                        getattr(Functions, func_name)(do, block_name, block_vars, wmi_obj, return_obj, self_protocol, protocols)
+                    except IndexError:
+                        pass
+            else:
+                break
+    @staticmethod
+    def TOSTRING(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList, self_protocol, protocols):
+        split = line.split(" ")
+        try:
+            src = split[1]
+            dest = split[-1]
+        except IndexError:
+            raise SyntaxError(f"Invalid syntax for TOSTRING: {line}")
+        try:
+            value = getattr(block_vars, src)
+        except AttributeError:
+            if (src.startswith('"') and src.endswith('"')) or (src.startswith("'") and src.endswith("'")):
+                value = src[1:-1]
+            else:
+                value = src
+        setattr(block_vars, dest, str(value))
 
 def compile(wmiq_code, ignore_lazy_errors=False, allow_prints=False):
     protocols = {}
