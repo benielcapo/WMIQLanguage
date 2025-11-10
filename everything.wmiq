@@ -1,0 +1,55 @@
+# ======================================================
+# Test file that uses every function in the interpreter
+# ======================================================
+
+RETURN_DATA Data
+
+# Define a protocol
+P-Add WITH (x, y):
+    ARIT x + y IN temp
+    RETURN_PROTO temp
+
+# Define a protocol that returns nothing
+P-Nothing WITH (n):
+    STORE_NONE IN n
+    RETURN_PROTO n
+
+NULL:
+    STORE_INT 5 IN a
+    STORE_FLOAT 3.14 IN b
+    STORE_STR Hello world IN msg
+    STORE_NONE IN n
+    RANGE 0 3 IN nums
+    PRINT 'Basic values set'
+    PRINT msg
+    ARIT a + b IN sum
+    PRINT sum
+    IF a > 3 { PRINT 'a > 3' | PRINT 'a <= 3' }
+    TRY { PRINT msg } IN tryres
+    PRINT tryres
+    STORE_RAW msg IN rawcopy
+    STORE_LIST_ELEMENT nums[1] IN elem
+    PRINT elem
+    STORE_PROP elem.__class__ IN class_type
+    PRINT class_type
+    WRITE_FILE "Testing write system" IN "output_test.txt"
+    OPEN "output_test.txt" IN file_content
+    PRINT file_content
+
+    STORE_FUNC Win32_OperatingSystem IN cap AS str
+    PRINT cap
+
+    STORE_INT 2 IN val
+    IF val == 2 { PRINT 'Yes 2' | PRINT 'Nope' }
+
+    RANGE 1 5 IN seq
+    PRINT seq
+
+    ITERATE_OVER seq AS x STORE_STR "Value" IN collected
+    PRINT collected
+
+    # Test protocol system
+    CALL_PROTO Add WITH (a, b) IN result
+    PRINT result
+
+RETURN_END Data
