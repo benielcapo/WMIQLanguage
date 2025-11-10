@@ -1,0 +1,8 @@
+RETURN_DATA Data
+
+NULL:
+    STORE_INT 1 IN x
+    STORE_INT 10 IN Target
+    WHILE x < 10 { STORE_RAW x IN Current | ARIT x + 1 IN x | TOSTRING Current IN CurrentStr | TOSTRING x IN XStr | ARIT "x was " + CurrentStr + " now its " + XStr IN Msg | PRINT Msg}
+
+RETURN_END Data
