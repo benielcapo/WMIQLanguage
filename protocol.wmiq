@@ -1,0 +1,19 @@
+RETURN_DATA Data
+
+P-Add WITH (a, b):
+    ARIT a + b IN c
+    PRINT "Received args, a is "
+    PRINT a
+    PRINT "b is "
+    PRINT b
+    PRINT "c is "
+    PRINT c
+    RETURN_PROTO c
+
+NULL:
+    STORE_INT 3 IN a
+    STORE_INT 5 IN b
+    CALL_PROTO Add WITH (a, b) IN Result
+    ADD_RETURN Result
+
+RETURN_END Data
