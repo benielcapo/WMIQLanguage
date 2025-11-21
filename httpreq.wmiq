@@ -1,0 +1,8 @@
+RETURN_DATA Data
+
+NULL:
+    HTTP "https://example.com" IN Req
+    STORE_PROP Req.text IN Html
+    WRITE_FILE Html IN "example.html"
+
+RETURN_END Data
