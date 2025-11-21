@@ -1,7 +1,7 @@
 import builtins
 import wmi
 import sys
-import os
+import requests
 
 class Variables:
     def __len__(self):
@@ -59,6 +59,12 @@ def handle_if(val1_, operator, val2_, block_vars):
     if operator not in ops:
         raise ValueError(f"Invalid operator '{operator}'")
     return ops[operator](left, right)
+
+def is_in_quotes(s: str):
+    if s.startswith("'") or s.startswith('"'):
+        if s.endswith("'") or s.endswith('"'):
+            return True
+    return False
 
 class Functions:
     @staticmethod
@@ -417,6 +423,21 @@ class Functions:
             else:
                 value = src
         setattr(block_vars, dest, str(value))
+    @staticmethod
+    def HTTP(line: str, block_name: str, block_vars: Variables, wmi_obj, return_obj: ReturnList, self_protocol, protocols):
+        split = line.split(" ")
+        location = split[-1]
+        url = split[1]
+        if not is_in_quotes(url):
+            try:
+                url = getattr(block_vars, url)
+            except:
+                raise Exception("Variable " + str(url) + " doesnt exist in the current context")
+        else:
+            url = url.replace("'", "")
+            url = url.replace('"', "")
+        res = requests.get(url)
+        setattr(block_vars, location, res)
 
 def compile(wmiq_code, ignore_lazy_errors=False, allow_prints=False):
     protocols = {}
